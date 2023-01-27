@@ -1,0 +1,34 @@
+<DOMAIN> {
+    log {
+        format console
+        level INFO
+    }
+
+    # Authentication Portal
+    handle /auth/* {
+        reverse_proxy auth:9091
+    }
+
+    @basicauth {
+        header Authorization Basic*
+    }
+
+    # Send via BasicAuth
+    handle @basicauth {
+        forward_auth auth:9091 {
+            uri /auth/api/verify?auth=basic
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy send:1443
+    }
+
+    # Send via Authentication Portal
+    handle {
+        forward_auth auth:9091 {
+            uri /auth/api/verify?rd=https://<DOMAIN>/auth/
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy send:1443
+    }
+}
+
